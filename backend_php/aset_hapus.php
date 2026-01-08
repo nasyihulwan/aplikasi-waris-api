@@ -12,7 +12,7 @@ if (empty($idAset)) {
     kirimRespon(false, 'ID aset harus diisi');
 }
 
-// Hapus verifikasi terkait terlebih dahulu
+// Hapus verifikasi terkait
 $queryVerifikasi = $koneksi->prepare("DELETE FROM verifikasi_aset WHERE id_aset = ?");
 $queryVerifikasi->bind_param("i", $idAset);
 $queryVerifikasi->execute();
@@ -28,7 +28,7 @@ if ($query->execute()) {
         kirimRespon(false, 'ID tidak ditemukan');
     }
 } else {
-    kirimRespon(false, 'Gagal menghapus aset:  ' . $query->error);
+    kirimRespon(false, 'Gagal menghapus aset: ' . $query->error);
 }
 
 $koneksi->close();

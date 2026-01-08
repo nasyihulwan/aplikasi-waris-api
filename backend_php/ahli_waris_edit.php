@@ -1,19 +1,13 @@
 <?php
-
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
+header('Content-Type:  application/json');
 require_once 'config.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    kirimRespon(false, 'Method tidak diizinkan');
 }
 
 $idAhliWaris = bersihkanInput($koneksi, $_POST['id'] ?? '');
-$namaLengkap = bersihkanInput($koneksi, $_POST['nama_lengkap'] ?? '');
+$namaLengkap = bersihkanInput($koneksi, $_POST['nama_lengkap'] ??  '');
 $hubungan = bersihkanInput($koneksi, $_POST['hubungan'] ?? '');
 $jenisKelamin = bersihkanInput($koneksi, $_POST['jenis_kelamin'] ?? '');
 
@@ -35,7 +29,7 @@ if (!in_array($jenisKelamin, $jenisKelaminValid)) {
 
 $query = $koneksi->prepare(
     "UPDATE ahli_waris 
-     SET nama_lengkap = ?, hubungan = ?, jenis_kelamin = ?   
+     SET nama_lengkap = ?, hubungan = ?, jenis_kelamin = ?  
      WHERE id = ?"
 );
 $query->bind_param("sssi", $namaLengkap, $hubungan, $jenisKelamin, $idAhliWaris);

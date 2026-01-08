@@ -7,7 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $nikPewaris = bersihkanInput($koneksi, $_POST['nik_pewaris'] ?? '');
-$dataPerhitungan = $_POST['data_perhitungan'] ?? '';
+$dataPerhitungan = $_POST['data_perhitungan'] ??  '';
 
 if (empty($nikPewaris) || empty($dataPerhitungan)) {
     kirimRespon(false, 'Data tidak lengkap');
