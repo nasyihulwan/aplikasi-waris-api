@@ -188,5 +188,95 @@ if ($method === 'GET' && $action === 'status') {
     exit;
 }
 
+// 5. DISABLE - Nonaktifkan 2FA
+if ($method === 'POST' && $action === 'disable') {
+    // Ambil data dari request (support JSON dan form-data)
+    $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+    
+    if (strpos($contentType, 'application/json') !== false) {
+        $inputData = json_decode(file_get_contents('php://input'), true);
+    } else {
+        $inputData = $_POST;
+    }
+    
+    $user_id = $inputData['user_id'] ?? null;
+    $code = $inputData['code'] ?? null;
+    
+    if (!$user_id || !$code) {
+        echo json_encode([
+            'success' => false,
+            'error' => 'user_id dan code (6 digit) wajib diisi'
+        ]);
+        exit;
+    }
+    
+    // Validasi kode harus 6 digit
+    if (!preg_match('/^\d{6}$/', $code)) {
+        echo json_encode([
+            'success' => false,
+            'error' => 'Kode harus 6 digit angka'
+        ]);
+        exit;
+    }
+    
+    // Ambil data user dari database
+    $stmt = $koneksi->prepare("SELECT two_factor_secret, two_factor_enabled FROM pengguna WHERE id = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
+    
+    if (!$user) {
+        echo json_encode([
+            'success' => false,
+            'error' => 'User tidak ditemukan'
+        ]);
+        exit;
+    }
+    
+    if (!$user['two_factor_enabled']) {
+        echo json_encode([
+            'success' => false,
+            'error' => '2FA belum diaktifkan untuk user ini'
+        ]);
+        exit;
+    }
+    
+    if (!$user['two_factor_secret']) {
+        echo json_encode([
+            'success' => false,
+            'error' => '2FA secret tidak ditemukan'
+        ]);
+        exit;
+    }
+    
+    // Verifikasi kode TOTP
+    $totp = TOTP::create($user['two_factor_secret']);
+    if (!$totp->verify($code)) {
+        echo json_encode([
+            'success' => false,
+            'error' => 'Kode tidak valid atau sudah expired'
+        ]);
+        exit;
+    }
+    
+    // Nonaktifkan 2FA dan hapus secret
+    $stmt = $koneksi->prepare("UPDATE pengguna SET two_factor_enabled = 0, two_factor_secret = NULL WHERE id = ?");
+    $stmt->bind_param("i", $user_id);
+    
+    if ($stmt->execute()) {
+        echo json_encode([
+            'success' => true,
+            'message' => '2FA berhasil dinonaktifkan'
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'error' => 'Gagal menonaktifkan 2FA: ' . $stmt->error
+        ]);
+    }
+    exit;
+}
+
 echo json_encode(['error' => 'Invalid request']);
 ?>
